@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Account Management</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #8A9A5B;
+            color: whitesmoke;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+        }
+
+        .form-container {
+            flex: 1;
+            background-color: #355E3B;
+            border: 2px solid #355E3B;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .form-header {
+            padding: 20px;
+            background-color: #013220;
+            border-radius: 8px 8px 0 0;
+            color: #BCB88A;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .form-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #013220;
+        }
+
+        input[type="number"] {
+            width: calc(100% - 10px);
+            padding: 5px;
+            border: 2px solid #013220;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #BCB88A;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #8A9A5B;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col w-full h-full justify-center text-center items-center bg-gray-200">
+    <header class="font-bold text-5xl md:text-6xl lg:text-8xl mb-8 text-gray-900" style="font-size: min(3rem, 8vw);">Account Management</header>
+
+    <div class="container">
+        <div class="form-container">
+            <header class="form-header">Deposit</header>
+            <div class="form-body">
+                <form id="depositForm">
+                    <div class="form-group text-center">
+                        <label for="depositAmount" class="text-gray-900">Amount:</label>
+                        <input type="number" id="depositAmount" name="depositAmount" required>
+                    </div>
+                    <button type="submit">Deposit</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <header class="form-header">Withdraw</header>
+            <div class="form-body">
+                <form id="withdrawForm">
+                    <div class="form-group text-center">
+                        <label for="withdrawAmount" class="text-gray-900">Amount:</label>
+                        <input type="number" id="withdrawAmount" name="withdrawAmount" required>
+                    </div>
+                    <button type="submit">Withdraw</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <header class="form-header">Check Balance</header>
+            <div class="form-body">
+                <form id="getBalanceForm">
+                    <button type="submit">Check Balance</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <header class="form-header">Get Account Details</header>
+        <form id="getAccountDetailsForm">
+            <button type="submit">Get Account Details</button>
+        </form>
+        <div id="accountDetails"></div>
+    </div>
+    <script>
+
+        document.getElementById("depositForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            let formData = new FormData(this);
+            let depositAmount = parseFloat(formData.get("depositAmount"));
+            if (isNaN(depositAmount) || depositAmount <= 0) {
+                alert("Please enter a valid deposit amount.");
+                return;
+            }
+            let username = localStorage.getItem("username");
+            if (!username) {
+                alert("Username not found in local storage.");
+                return;
+            }
+            fetch(`/api/accounts/${username}/deposit`, {
+                method: "POST",
+                body: JSON.stringify({ amount : depositAmount }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Deposit successful. New balance: " + data.balance);
+                this.reset();
+            })
+            .catch(error => {
+                alert("Failed to deposit: " + error.message);
+            });
+        });
+        
+        document.getElementById("withdrawForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            let formData = new FormData(this);
+            let usernames = localStorage.getItem("username");
+            let withdrawAmount = parseFloat(formData.get("withdrawAmount"));
+            if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
+                alert("Please enter a valid withdrawal amount.");
+                return;
+            } 
+            fetch(`/api/accounts/${usernames}/balance`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data-withdrawAmount <0 ){
+                    alert("Insufficient funds.")
+                    return;
+                }
+            })
+            .catch(error => {
+                alert("Failed to fetch balance: " + error.message);
+            });
+            
+            let username = localStorage.getItem("username");
+            if (!username) {
+                alert("Username not found in local storage.");
+                return;
+            }
+            fetch(`/api/accounts/${username}/withdraw`, {
+                method: "POST",
+                body: JSON.stringify({ amount: withdrawAmount }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Withdrawal successful. New balance: " + data.balance);
+                this.reset();
+            })
+            .catch(error => {
+                alert("Failed to withdraw: " + error.message);
+            });
+        });        
+        
+        document.getElementById("getBalanceForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            let username = localStorage.getItem("username");
+            if (!username) {
+                alert("Username not found in local storage.");
+                return;
+            }
+            fetch(`/api/accounts/${username}/balance`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Current balance: " + data);
+                this.reset();
+            })
+            .catch(error => {
+                alert("Failed to fetch balance: " + error.message);
+            });
+        });
+        
+        document.getElementById("getAccountDetailsForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            let username = localStorage.getItem("username");
+            if (!username) {
+                alert("Username not found in local storage.");
+                return;
+            }
+            fetch(`/api/accounts/${username}/details`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                let detailsDiv = document.getElementById("accountDetails");
+                detailsDiv.innerHTML = `
+                    <p><strong>Account ID:</strong> ${data.id}</p>
+                    <p><strong>Name:</strong> ${data.accountHolderName}</p>
+                    <p><strong>Balance:</strong> ${data.balance}</p>
+                    <p><strong>Interest Rate:</strong> ${data.interestRate ? data.interestRate : 'Not Applicable'}</p>
+                `;
+                this.reset();
+            })
+            .catch(error => {
+                alert("Failed to fetch account details: " + error.message);
+            });
+        });
+        
+               
+    </script>
+</body>
+
+</html>

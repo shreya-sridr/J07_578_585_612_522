@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Bank Management</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #8A9A5B;
+            color: whitesmoke;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+        }
+
+        .form-container {
+            width: 30%;
+            background-color: #014421;
+            border: 2px solid #014421;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-header {
+            padding: 20px;
+            background-color: #355E3B;
+            border-radius: 8px 8px 0 0;
+            color: #BCB88A;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .form-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #BCB88A;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: calc(100% - 10px);
+            padding: 5px;
+            border: 2px solid #BCB88A;
+            border-radius: 5px;
+            color: #BCB88A;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #BCB88A;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #8A9A5B;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1 class="font-bold text-3xl mb-8 text-gray-900">Bank Management</h1>
+
+    <div class="container">
+        <div class="form-container">
+            <header class="form-header">Create Bank</header>
+            <div class="form-body">
+                <form id="createBankForm">
+                    <div class="form-group">
+                        <label for="bankName">Bank Name:</label>
+                        <input type="text" id="bankName" name="bankName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="location">Country:</label>
+                        <input type="text" id="location" name="location" required>
+                    </div>
+                    <button type="submit">Create Bank</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <header class="form-header">Add Employee to a Branch</header>
+            <div class="form-body">
+                <form id="createEmployeeForm">
+                    <div class="form-group">
+                        <label for="name">Employee Name:</label>
+                        <input type="text" id="name" name="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="empId">Employee ID:</label>
+                        <input type="text" id="empId" name="empId">
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Address:</label>
+                        <input type="text" id="address" name="address">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact">Contact:</label>
+                        <input type="text" id="contact" name="contact">
+                    </div>
+                    <div class="form-group">
+                        <label for="salary">Salary:</label>
+                        <input type="text" id="salary" name="salary">
+                    </div>
+                    <div class="form-group">
+                        <label for="branchId">Branch ID:</label>
+                        <input type="text" id="branchId" name="branchId">
+                    </div>
+                    <button type="submit">Add Employee</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <header class="form-header">Get Bank Details</header>
+            <div class="form-body">
+                <form id="getBankForm">
+                    <div class="form-group">
+                        <label for="bankId">Bank ID:</label>
+                        <input type="number" id="bankId" name="bankId" required>
+                        
+                    </div>
+                    <button type="submit">Get Bank Details</button>
+                    <div id="bankDetails" class="font-semibold text-left px-4"> </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // AJAX request to create a bank
+        document.getElementById("createBankForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            let formData = new FormData(this);
+            fetch("/api/banks", {
+                method: "POST",
+                body: JSON.stringify({
+                    bankName: formData.get("bankName"),
+                    location: formData.get("location")
+                }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert("Bank created successfully with ID: " + data.id);
+                    this.reset();
+                })
+                .catch(error => {
+                    alert("Failed to create bank: " + error.message);
+                });
+        });
+
+        // AJAX request to add employees to a branch
+        document.getElementById("createEmployeeForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            let formData = new FormData(this);
+            let branchId = formData.get("branchId");
+            fetch("/api/employees/" + branchId, {
+                method: "POST",
+                body: JSON.stringify({
+                    name: formData.get("name"),
+                    empId: formData.get("empId"),
+                    address: formData.get("address"),
+                    contact: formData.get("contact"),
+                    salary: formData.get("salary"),
+                    branchId: formData.get("branchId"),
+                }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Employee added successfully");
+                        this.reset();
+                    } else {
+                        throw new Error("Failed to add employee");
+                    }
+                })
+                .catch(error => {
+                    alert("Failed to add employee: " + error.message);
+                });
+        });
+
+        // AJAX request to get bank details by ID
+        document.getElementById("getBankForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+        let bankId = document.getElementById("bankId").value;
+        fetch("/api/banks/" + bankId)
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error("Failed to fetch bank details");
+                }
+            })
+            .then(data => {
+                let bankDetails = `
+                <h3>Bank Details</h3>
+                <p>ID: ${data.id}</p>
+                <p>Bank Name: ${data.bankName}</p>
+                <p>Location: ${data.location}</p>
+                <p>Number of Branches: ${data.numberOfBranches}</p>
+            `;
+                document.getElementById("bankDetails").innerHTML = bankDetails;
+            })
+            .catch(error => {
+                alert("Failed to fetch bank details: " + error.message);
+            });
+        alert("Fetching bank details..."); // Moved alert outside of fetch promise chains
+    });
+    </script>
+</body>
+
+</html>
